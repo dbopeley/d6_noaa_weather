@@ -1,0 +1,206 @@
+<?php
+/**
+ * @name NOAA Weather 
+ * @category weather
+ * @copyright 2010 Blue Tent Marketing
+ * @author Daniel Bopely <dan@bluetent.com> - Originator of this great module!
+ * @author Paul T. Huntsberger <paul@bluetent.com> - Ported and expanded to Drupal 6.
+ * @package NOAA Weather
+ * @version 1.0-dev
+ *
+ * The NOAA Weather module for Drupal 6 is a port and re-write of the Drupal 5 module. This module allows the end user to have
+ * a set of blocks and an admin user interface for assigning weather station information for current forecasts, extended foredcasts and radar station information.
+ * 
+ * @todo - this still needs a good audit and code cleanup, and eventually will be able to add multiple stations (perhaps a max limit of 5 individual stations) and
+ * perhaps some ctools interface integration.
+ * @todo - Add a help section.
+ * @todo - Add developer documentation.
+ */
+
+//Global Module Definitions.
+define('NOAA_WEATHER_MODULE_PATH', drupal_get_path('module', 'noaa_weather'));
+define('NOAA_WEATHER_DEFAULT_IMAGE_DIRECTORY', NOAA_WEATHER_MODULE_PATH .'/images/default');
+define('NOAA_WEATHER_CUSTOM_IMAGE_DIRECTORY', NOAA_WEATHER_MODULE_PATH .'/images/custom');
+define('NOAA_WEATHER_RADAR_IMAGE_DIRECTORY', file_create_path() .'/noaa_weather_radar');
+
+//Internal Module Configuration.
+define ('NOAA_WEATHER_CACHE_TIME', 3600);
+define ('NOAA_WEATHER_CURRENT_URL', 'http://www.weather.gov/xml/current_obs/');
+define ('NOAA_WEATHER_FORECAST_URL', 'http://www.weather.gov/forecasts/xml/SOAP_server/ndfdSOAPclientByDay.php');
+define ('NOAA_WEATHER_SOCKET_TIMEOUT_SECONDS', 5);
+
+//End User Configuration.
+define ('NOAA_WEATHER_CURRENT_WEATHER_STATION_DEFAULT', variable_get('noaa_weather_current_weather_station_default', 'INIT'));
+define ('NOAA_WEATHER_CURRENT_LOCATION_NAME_DEFAULT', variable_get('noaa_weather_current_location_name_default', NULL));
+define ('NOAA_WEATHER_CURRENT_TEMP_UNIT_DEFAULT', variable_get('noaa_weather_current_temp_unit_default', 'f'));
+define ('NOAA_WEATHER_FORECAST_LAT_DEFAULT', variable_get('noaa_weather_forecast_lat_default', '47.53'));  
+define ('NOAA_WEATHER_FORECAST_LON_DEFAULT', variable_get('noaa_weather_forecast_lon_default', '-122.30'));
+define ('NOAA_WEATHER_FORECAST_DAYS_DEFAULT', variable_get('noaa_weather_forecast_days_default', 5));
+define ('NOAA_WEATHER_FORECAST_DAYSPAN_DEFAULT', variable_get('noaa_weather_forecast_dayspan_default', 12));
+define ('NOAA_WEATHER_FORECAST_TEMP_UNIT_DEFAULT', variable_get('noaa_weather_forecast_temp_unit_default', 'f'));
+define ('NOAA_WEATHER_RADAR_STATION_DEFAULT', variable_get('noaa_weather_radar_station_default', 'INIT'));
+define ('NOAA_WEATHER_RADAR_PICTURE_WIDTH_DEFAULT', variable_get('noaa_weather_radar_picture_width_default', 600));
+define ('NOAA_WEATHER_RADAR_PICTURE_HEIGHT_DEFAULT', variable_get('noaa_weather_radar_picture_height_default', 550));
+
+//mesowest
+define ('NOAA_WEATHER_MESOWEST_STATION_DEFAULT', variable_get('noaa_weather_mesowest_station_default', 'INIT'));
+
+/**
+ * Implementation of hook_init().
+ */
+function noaa_weather_init() {
+  //Module Include Files when the module initializes.
+  //Admin Files
+  include_once(NOAA_WEATHER_MODULE_PATH .'/includes/admin.noaa.inc');
+  //Include the various stations here, so we can have ano object to play with
+  include_once(NOAA_WEATHER_MODULE_PATH .'/includes/stations.inc');
+  //Include defalt icons array, so we can have multiple arrays here
+  include_once(NOAA_WEATHER_MODULE_PATH .'/includes/icons.inc');
+  //Include module functions
+  include_once(NOAA_WEATHER_MODULE_PATH .'/includes/noaa.inc');
+  //Include theme files
+  include_once(NOAA_WEATHER_MODULE_PATH .'/theme/theme.noaa.inc');
+  //Add in jquery js
+  drupal_add_js(NOAA_WEATHER_MODULE_PATH .'/js/jquery.functions.js' ,'module', 'header' );
+  //Add CSS files
+  drupal_add_css(NOAA_WEATHER_MODULE_PATH .'/css/noaa-weather-styles.css', 'module', 'all');
+  //Check Install
+  if (arg(0) == 'admin') {
+    _noaa_weather_check_install();
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function noaa_weather_menu(){
+  $items = array();
+  //Main menu.
+  $items['admin/settings/noaaweather'] = array(
+    'title'             => t('NOAA Weather'),
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('_noaa_weather_main_settings'),
+    'type'              => MENU_NORMAL_ITEM,
+    'access arguments'  => array('administer site configuration'),
+  );
+  //Default local menu.
+  $items['admin/settings/noaaweather/main'] = array(
+    'title'             => t('Main Panel'),
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('_noaa_weather_main_settings'),
+    'type'              => MENU_DEFAULT_LOCAL_TASK,
+    'access arguments'  => array('administer site configuration'),
+    'weight'            => -100,
+  );
+  //Module Local Tasks.
+  $items['admin/settings/noaaweather/current-conditions'] = array(
+    'title'             => t('Current Conditions'),
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('_noaa_weather_current_settings'),
+    'type'              => MENU_LOCAL_TASK,
+    'access arguments'  => array('administer site configuration'),
+    'weight'            => -99,
+  );
+  $items['admin/settings/noaaweather/point-forecast'] = array(
+    'title'             => t('Point Forecast'),
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('_noaa_weather_forecast_settings'),
+    'type'              => MENU_LOCAL_TASK,
+    'access arguments'  => array('administer site configuration'),
+    'weight'            => -98,
+  );
+  $items['admin/settings/noaaweather/radar'] = array(
+    'title'             => t('Radar'),
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('_noaa_weather_radar_settings'),
+    'type'              => MENU_LOCAL_TASK,
+    'access arguments'  => array('administer site configuration'),
+    'weight'            => -97,
+  );
+  $items['admin/settings/noaaweather/icons'] = array(
+    'title'             => t('Icons'),
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('_noaa_weather_icon_settings'),
+    'type'              => MENU_LOCAL_TASK,
+    'access arguments'  => array('administer site configuration'),
+    'weight'            => -96,
+  );
+
+	$items['noaaweather/update/all'] = array(
+    'page callback'     => '_noaa_weather_update_all_weather',
+    'type'              => MENU_CALLBACK,
+		'access arguments'  => array('administer site configuration'),
+  );
+  
+	$items['noaaweather/update/current'] = array(
+    'page callback'     => '_noaa_weather_update_current',
+    'type'              => MENU_CALLBACK,
+		'access arguments'  => array('administer site configuration'),
+  );
+	$items['noaaweather/update/forecast'] = array(
+    'page callback'     => '_noaa_weather_update_forecast',
+    'type'              => MENU_CALLBACK,
+		'access arguments'  => array('administer site configuration'),
+  );
+	$items['noaaweather/update/radar'] = array(
+    'page callback'     => '_noaa_weather_update_radar',
+    'type'              => MENU_CALLBACK,
+		'access arguments'  => array('administer site configuration'),
+  );
+  
+  
+  	$items['noaaweather/update/mesowest'] = array(
+    'page callback'     => '_noaa_weather_update_mesowest',
+    'type'              => MENU_CALLBACK,
+		'access arguments'  => array('administer site configuration'),
+  );
+  //Return Items.
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function noaa_weather_theme() {
+  //Theme blocks.
+  //Foreach block we have set in blocks, theme that block
+  $blocks = variable_get('noaa_weather_blocks', NULL);
+  foreach ($blocks as $value) {
+		$theme[$value['theme']] = array (
+      'path'      => NOAA_WEATHER_MODULE_PATH,
+      'template'  => 'theme/'.str_replace('_','-',$value['theme']),
+      'arguments' => array( 'widget' => NULL ),
+		);
+  }
+  //@todo - any other themeing to play with?
+  return $theme;
+}
+
+/**
+ * Implementation of hook_block()
+ */
+function noaa_weather_block($op = 'list', $delta = 0, $edit = array()) {
+  //Switch through Ops @todo - we need to add in configure options, when we add new blocks @todo - When we move to multiple blocks and options, this makes everything easier. Remember block delta's should remain numeric
+  $blocks = variable_get('noaa_weather_blocks', NULL);
+  switch ($op) {
+    case 'list':
+      $items = array();
+      //If we have out list of variables, and they are not NULL then show the blocks
+      foreach ($blocks as $key => $value ) {
+        $items[$key]['info']  = t('NOAA Weather: @INFO', array('@INFO' => $value['info']));
+        $items[$key]['cache'] = BLOCK_NO_CACHE;
+      }
+      return $items;
+    case 'view':
+      //Find our block through the delta and theme them accordingly @todo - When we move to a more normalized system, our arrays will populate this info automatically now
+      $block['subject'] = $blocks[$delta]['info'];
+      $block['content'] = theme($blocks[$delta]['theme']);
+      return $block;
+  }
+}
+
+
+function noaa_weather_cron() {
+  //Update All Weather.
+  _noaa_weather_update_all_weather();
+}

@@ -1,0 +1,5 @@
+name            = NOAA Weather
+description     = Provides a themeable set of weather widgets that pull live data from http://www.noaa.gov/ XML feeds
+core            = 6.x
+package         = NOAA Weather
+version         = 1.2-beta

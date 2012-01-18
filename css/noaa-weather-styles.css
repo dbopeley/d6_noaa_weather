@@ -1,0 +1,185 @@
+#noaa-weather-radar-map {
+	display:block;
+  padding:10px;
+  width:610px;
+  margin: 0 auto;
+  height:560px;
+  position:relative;
+}
+
+#noaa-weather-radar-map .radar-map {
+  position:absolute;
+  display:block;
+}
+
+#noaa-weather-radar-map #radar-map-0 {
+  z-index:1;
+}
+
+#noaa-weather-radar-map #radar-map-1 {
+  z-index:2;
+}
+
+#noaa-weather-radar-map #radar-map-2 {
+  z-index:3;
+}
+
+#noaa-weather-radar-map #radar-map-3 {
+  z-index:4;
+}
+
+#noaa-weather-radar-map #radar-map-4 {
+  z-index:5;
+}
+
+#noaa-weather-radar-map #radar-map-5 {
+  z-index:6;
+}
+
+#noaa-weather-radar-map #radar-map-6 {
+  z-index:7;
+}
+
+#noaa-weather-radar-map img {
+	border-style:none;
+}
+
+#noaa-weather-radar-map-toggles {
+  display:block;
+  width:300px;
+  margin: 0 auto;
+  overflow:hidden;
+}
+
+#noaa-weather-radar-map-toggles input[type=checkbox] {
+  margin-right:15px;
+}
+
+#block-noaaweather-0 .content{
+	margin:0;
+	line-height:14px;
+	font-size:11px;
+}
+
+.noaa-current-updatedon{
+	font-size:9px;
+	font-weight:normal;
+}
+
+#noaa-current{
+	width:600px;
+	font-size:11px;
+	font-weight:normal;
+}
+
+.noaa-current-daystr{
+	background-color:#aabdcd;
+	font-size:11px;
+	font-weight:bolder;
+	padding:2px 3px;
+}
+
+.noaa-current-image{
+float:left;
+width:60px;
+margin:0 3px 3px 0;
+}
+
+.noaa-current-data {
+float:left;
+margin:0 3px 3px 0;
+}
+
+#noaa-weather-forecast {
+ line-height:12px;
+ display:block;
+ overflow:hidden;
+}
+
+.forecast-day {
+	margin:2px 5px;
+	font-size:11px;
+	float:left;
+}
+
+.noaa-forecast-day-12 {
+	width:100px;
+}
+
+.noaa-forecast-day-12-b{
+	width:140px;
+}
+
+.noaa-forecast-day-24{
+	margin-left:2px;
+	border:solid 1px #000000;
+	font-size:9px;
+	float:left;
+}
+
+.noaa-forecast-day-24-f,
+.noaa-forecast-day-24-c {
+	width:100px;
+}
+
+.noaa-forecast-day-24-b{
+	width:140px;
+}
+
+.noaa-forecast-dayformated{
+background-color:#aabdcd;
+text-align:center;
+font-size:11px;
+font-weight:bolder;
+padding:2px 0;
+}
+
+/**
+ * Select Box with Images CSS
+ */
+div.noaa-weather-pager-info {
+  color: #666;
+  text-align:right;
+}
+
+div.custom-icon-wrapper {
+  float:left;
+  width:48%;
+  margin:5px;
+  padding-bottom:15px;
+  height:85px;
+  overflow:hidden;
+}
+
+div.custom-icon-wrapper img.original-image {
+  float:left;
+  margin:10px;
+}
+
+.dd {
+  width:250px !important;
+  margin: 0px 5px;
+  float:none;
+}
+
+.dd .ddChild {
+  width:250px !important;
+}
+
+.dd,
+.dd .ddTitle {
+  height:75px !important;
+}
+
+.dd .ddTitle span.ddTitleText img,
+.dd .ddChild a img {
+  max-height:70px;
+}
+
+.forecast-temp{
+margin:3px 0;
+padding:3px;
+background:#cbcbcb;
+color:#ffffff;
+font-weight:bolder;
+}

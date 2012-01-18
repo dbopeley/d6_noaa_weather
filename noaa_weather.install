@@ -1,0 +1,157 @@
+<?php
+/**
+ * @file noaa_weather.install 
+ * NOAA Weather Install
+ * Version: 1.0
+ */
+define( "NOAA_WEATHER_MODULE_PATH", drupal_get_path('module', 'noaa_weather') );
+define( "NOAA_WEATHER_DEFAULT_IMAGE_DIRECTORY", NOAA_WEATHER_MODULE_PATH .'/images/default/' );
+include_once(NOAA_WEATHER_MODULE_PATH .'/includes/icons.inc');
+
+/**
+ * Module Definitions
+ */
+define('INSTALLED_MODULE_NAME', 'NOAA Custom Weather');
+
+/**
+ * Hook Requirements
+ * @internal This is where we will put the requirements for this module, so the end user can finish the installation properly.
+ */
+function noaa_weather_requirements( $phase ) {
+  //Clear the requirements array.
+  $requirements = array();
+  //Switch between phases.
+  switch ( $phase ) {
+    //Install Phase.
+    case 'install':
+      break;
+    //Runtime Phase. This is where we will scan for requirements, so that they persist sitewide.
+    case 'runtime':
+      //Check for if the weather station has been selected
+      if (variable_get('noaa_weather_current_weather_station_default', 'INIT') == 'INIT') {
+        $MSG = t( 'You have not entered a current station, please select a station from the NOAA Station List.' );
+        $requirements['noaa_weather_weather_station'] = array(
+          'title'       => t( 'NOAA Weather Station' ),
+          'value'       => $MSG,
+          'severity'    => REQUIREMENT_ERROR
+        );
+      }
+      break;
+  }
+  return $requirements;
+}
+
+/**
+ * Implementation of hook_schema
+ * @internal This is to add cache tables that we can use in the future, so we can cache the data to a table, rather than just a variable
+ */
+function noaa_weather_schema() {
+  //Install the cache tables for this module.
+  $schema['cache_noaa_weather'] = drupal_get_schema_unprocessed( 'system', 'cache' );
+  return $schema;
+}
+
+/**
+ * Hook Enable
+ */
+function noaa_weather_enable() {
+  //Provide a pleasant message when we install the module.
+  $MSG = t('You have successfully enabled the @name Module. Please look at the module documentation for more help in development.', array('@name' => INSTALLED_MODULE_NAME));
+  drupal_set_message( $MSG );
+}
+
+/**
+ * Hook Disable
+ */
+function noaa_weather_disable() {
+  //Provide a pleasant message when disabling the module.
+  $MSG = t('@name Module sucessfully disabled.', array('@name' => INSTALLED_MODULE_NAME));
+  drupal_set_message( $MSG );
+}
+
+/**
+ * Hook Install
+ */
+function noaa_weather_install() {
+  //Check the default directory for the radar file, if it is not there, create the directory
+  $noaa_weather_radar_directory = file_create_path() .'/noaa_weather_radar';
+  file_check_directory( $noaa_weather_radar_directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS );
+  //Check the default file directory for custom icons, if it is not there than create the directory, or if the permissions are broken, correct them.
+  $noaa_weather_custom_icons_directory = file_create_path() .'/noaa_weather_custom_icons';
+  file_check_directory( $noaa_weather_custom_icons_directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS );
+  //Install the NOAA Cache Tables.
+  drupal_install_schema('noaa_weather');
+  //Set the variables to their defaults
+  variable_set('noaa_weather_current_location_name_default', NULL);
+  variable_set('noaa_weather_current_weather_station_default', 'INIT');
+  variable_get('noaa_weather_radar_station_default', 'INIT');
+  //Set up the default icon list, so we can use that as our icon list
+  //Set the noaa_weather_icons_list with the new values
+  $defaultImages  = noaaImages::_defaultImages();
+  $images = array();
+  foreach ($defaultImages as $key => $value) {
+    //We want to loop through the default images, and reset the image array, replacing the images with the custom values
+    $image = NOAA_WEATHER_DEFAULT_IMAGE_DIRECTORY .$value;
+    $images[$image] = $image;
+  }
+  variable_set('noaa_weather_icons_list', $images);
+  
+  //Set up the default blocks we will use @internal - these need to remain numeric so we don't run into delta problems!
+  $default_blocks = array(
+    0 => array(
+      'info'  => t('Current Conditions'),
+      'theme' => 'block_noaa_current_default',
+    ),
+    1 => array(
+      'info'  => t('Weather Forecast'),
+      'theme' => 'block_noaa_forecast_default',
+    ),
+    2 => array(
+      'info'  => t('Radar Picture'),
+      'theme' => 'block_noaa_radar_default',
+    ),
+    3 => array(
+      'info'  => t('Homepage Widget'),
+      'theme' => 'block_noaa_front_default',
+    ),
+  );
+  variable_set('noaa_weather_blocks', $default_blocks);
+}
+
+/**
+ * Hook Uninstall
+ */
+function noaa_weather_uninstall() {
+  //XML Variables
+  variable_del('noaa_weather_current_conditions');
+  variable_del('noaa_weather_forecast');
+  //installed defaults
+	variable_del('noaa_weather_blocks');
+  variable_del('noaa_weather_current_weather_station_default');
+  variable_del('noaa_weather_current_location_name_default');
+  variable_del('noaa_weather_current_temp_unit_default');
+  variable_del('noaa_weather_forecast_lon_default');
+  variable_del('noaa_weather_forecast_lat_default');  
+  variable_del('noaa_weather_forecast_days_default');
+  variable_del('noaa_weather_forecast_dayspan_default');
+  variable_del('noaa_weather_forecast_temp_unit_default');
+  variable_del('noaa_weather_radar_station_default');
+	variable_del('noaa_weather_radar_width_default');
+  variable_del('noaa_weather_radar_height_default');
+  variable_del('noaa_weather_radar_picture_width_default');
+  variable_del('noaa_weather_radar_picture_height_default');
+  variable_del('noaa_weather_icons_list');
+  variable_del('noaa_weather_icons_custom_directories');
+  variable_del('noaa_weather_mesowest_station_default');
+
+  //Clear all caches upon uninstall.
+  cache_clear_all('*', 'cache', TRUE);
+  cache_clear_all('*', 'cache_filter', TRUE);
+  cache_clear_all('*', 'cache_menu', TRUE);
+  cache_clear_all('*', 'cache_page', TRUE);
+  //Remove the NOAA Weather cache tables
+  drupal_uninstall_schema('noaa_weather');
+  //Provide a pleasant message when uninstalling the module.
+  $MSG = t('@name Module sucessfully uninstalled.', array('@name' => INSTALLED_MODULE_NAME));
+  drupal_set_message( $MSG );
+}
