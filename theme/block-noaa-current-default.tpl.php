@@ -3,20 +3,6 @@
  * This is the template file for all weather widget blocks
  * More documentation to come.
  * 
- *   <div class="observation-time-rfc"><?php print $widget['observation_time_rfc822']; ?></div>
-  <span class="observation-time"><?php print $widget['observation_time']; ?></span>
-  <div class="noaa-weather-icon"><?php print $widget['icon_rendered']; ?></div>
-  <div class="current-data1">
-    <div class="weather">Weather: <?php print $widget['weather']; ?></div>
-    <div class="current">Currently: <?php print $widget['temperature_string']; ?></div>
-    <div class="humidity">Humidity: <?php print $widget['relative_humidity']; ?></div>
-  </div>
-  <div class="current-data2">
-    <div class="wind">Wind: <?php print $widget['wind_string']; ?></div>
-    <div class="barometer">Barometer: <?php print $widget['pressure_in']; ?></div>
-    <div class="visibility">Visibility: <?php print $widget['visibility_mi']; ?> miles</div>
-  </div>
-  </div>
  */
 
 if($widget['mesowest']):
@@ -68,19 +54,27 @@ solar_radiation_w_m2 (String, 5 characters ) 177.0
 	 </div>
 </div>
 
-<?php else: 
-
+<?php 
+else:
 ?>
 <div id="noaa-weather-current-conditions-default">
-	  <div class="noaa-weather-icon"><?php print $widget['icon_rendered']; ?></div>
-	  <div class="current-data1">
-	    <div class="weather"><b><?php print $widget['current']['weather']; ?></b><br /><?php print $widget['current']['temperature_string']; ?></div>
-	  </div>
-	  <div class="current-hilo">
-	  <div class="expected"><b>Expected</b></div>
-	    <div class="hi">High<br /> <?php print $widget['temperature_max']; ?></div>
-	   	<div class="lo">Low<br /> <?php print $widget['temperature_min']; ?></div>
-	  </div>
-	  <br clear="all" />
+	<div class="noaa-weather-current-header">From <?php print $widget['current']['location']; ?><br /><span class="noaa-weather-current_obstime"><?php print $widget['current']['observation_time']; ?></span></div>
+	<div class="noaa-weather-icon"><?php print $widget['icon_rendered']; ?></div>
+  <div class="noaa-weather-current-data">
+    <div class="weather">
+    	<b><?php print $widget['current']['weather']; ?></b><br /><?php print $widget['current']['temperature_string']; ?>
+  	</div>
+  </div>
+  <div class="noaa-weather-current-additional">
+<?php
+	
+	foreach ($widget['display_data'] as $display => $label) {
+		echo '<div class="noaa-weather-current-additional-data">	<label>'.$label[0].'</label>&nbsp;&nbsp;'.$widget['current'][$display].'&nbsp;'.$label[1].'</div>';
+		
+	}
+
+?>
+</div>
+<br clear="all" />
 </div>
 <?php endif ?>

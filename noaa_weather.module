@@ -5,8 +5,9 @@
  * @copyright 2010 Blue Tent Marketing
  * @author Daniel Bopely <dan@bluetent.com> - Originator of this great module!
  * @author Paul T. Huntsberger <paul@bluetent.com> - Ported and expanded to Drupal 6.
+ * @author Daniel Bopely <dan@bluetent.com> - Implemented minor bug fixes
  * @package NOAA Weather
- * @version 1.0-dev
+ * @version 1.2-beta
  *
  * The NOAA Weather module for Drupal 6 is a port and re-write of the Drupal 5 module. This module allows the end user to have
  * a set of blocks and an admin user interface for assigning weather station information for current forecasts, extended foredcasts and radar station information.
@@ -197,6 +198,19 @@ function noaa_weather_block($op = 'list', $delta = 0, $edit = array()) {
       $block['content'] = theme($blocks[$delta]['theme']);
       return $block;
   }
+}
+
+
+function noaa_weather_preprocess_page(&$vars){
+	$target_path = $vars['node']->path;
+	$configured_path = variable_get('noaa_weather_detail_link', 'weather');
+	if($target_path == $configured_path){
+		drupal_set_html_head('<META HTTP-EQUIV=\"expires\" CONTENT=\"0\">
+		<META HTTP-EQUIV=\"pragma\" CONTENT=\"NO-CACHE\">
+		<META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
+		');
+		$vars['head'] = drupal_get_html_head();
+	}
 }
 
 

@@ -63,9 +63,38 @@ function _noaa_weather_main_settings() {
     '#suffix'  => '</p>',
     '#group'   => 'main',
   );
+  
+  
+  $front_display_options = array(
+  1 => 'header bar',
+  2 => 'sidebar block light',
+  3 => 'sidebar block heavy');
+  
+  $form['main']['noaa_weather_front_display'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Front Block Display Options'),
+    '#description'   => t('Select the display type for the front page weather block.'),
+    '#multiple'      => FALSE,
+    '#options'       => $front_display_options,
+    '#default_value' => variable_get('noaa_weather_front_display', 1),
+    '#required'      => TRUE,
+    '#group'   => 'main',
+  );
+
+  $form['main']['noaa_weather_detail_link'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Detailed Weather Link Path'),
+    '#description'   => t('Please enter the path to weather details page.'),
+    '#default_value' => variable_get('noaa_weather_detail_link', 'weather'),
+    '#required'      => TRUE,
+    '#suffix' => 'Used to create a link to configured path where detailed weather is displayed. Defaults to \'weather\'',
+    '#group'         => 'main',
+  );
+  
+  
   //Enable vertical tabs if installed.
   $form['#pre_render'][] = 'vertical_tabs_form_pre_render';
-  return $form;
+   return system_settings_form( $form );
 }
 
 function _noaa_weather_current_settings() {
@@ -77,6 +106,16 @@ function _noaa_weather_current_settings() {
 		'#collapsed' 	 => FALSE,
 		'#weight'			 => -50,
     '#group'       => 'main_settings',
+  );
+  
+  $attributes['class'] = 'update-noaa-weather';
+  $attributes['query'] = drupal_get_destination();
+  $items[] = l('Update Current Conditions', 'noaaweather/update/current', $attributes);
+  $form['current_settings']['updatelink'] = array(
+    '#prefix' => '<p>',
+    '#value'   => theme('item_list', $items),
+    '#suffix'  => '</p>',
+    '#group'   => 'main_settings',
   );
   //Weather station.
   //@todo - make this so we can have multiple locations to choose from
@@ -119,54 +158,112 @@ function _noaa_weather_current_settings() {
   );
   
   
-  $attributes['class'] = 'update-noaa-weather';
-  $attributes['query'] = drupal_get_destination();
-  $items[] = l('Update Current Conditions', 'noaaweather/update/current', $attributes);
-  $form['current_settings']['updatelink'] = array(
-    '#prefix' => '<p>',
-    '#value'   => theme('item_list', $items),
-    '#suffix'  => '</p>',
-    '#group'   => 'main_settings',
-  );
+   $form['current_settings']['noaa_weather_current_display_data'] = array(
+   '#type' => 'checkboxes', 
+   '#title' => t('Current Data Display'), 
+   '#default_value' => variable_get('noaa_weather_current_display_data', NULL),
+   '#options' => array(
+  	'relative_humidity'=>'Humidity(%)',
+		'wind_string'=>'Winds(string)',
+		'wind_dir'=>'Wind Direction',
+		'wind_degrees'=>'Wind Heading(deg)',
+		'wind_mph'=>'Wind Speed(mph)',
+		'wind_kt'=>'Wind Speed(kts)',
+		'pressure_string'=>'Barometric Pressure (string)',
+		'pressure_mb'=>'Barometric Pressure(mb)',
+		'pressure_in'=>'Barometric Pressure(in)',
+		'dewpoint_string'=>'Dewpoint',
+		'dewpoint_f'=>'Dewpoint (f)',
+		'dewpoint_c'=>'Dewpoint (c)',
+		'visibility_mi'=>'Visibility(mi)'
+      ),
+   '#description' => t('Check which Current data you wish to display'),
+
+    );
+  $current = variable_get('noaa_weather_current_conditions', NULL);
+   
+  if($current){
+	  $cur = '';
+	  foreach ($current as $key => $value) {
+	  	$cur .= $key.' : <b>'.$value.'</b><br />';
+	  }
+	  $form['current_settings']['currentmeso'] = array(
+	    '#prefix' => '<p><b>Currently Stored NOAA Current Conditions Data</b><br />',
+	    '#value'   => $cur,
+	    '#suffix'  => '</p>',
+	    '#group'   => 'main_settings',
+	  );
+  }
+
   
     $form['mesowest_settings'] = array(
     '#type'        => 'fieldset',
-    '#title'       => t('MesoWest Current Condition Settings'),
+    '#title'       => t('MesoWest Current Conditions Settings'),
     '#description' => t('These are settings for your current forecast.'),
 		'#collapsible' => FALSE,
 		'#collapsed' 	 => FALSE,
 		'#weight'			 => -40,
-    '#group'       => 'main_settings',
-  );
+    '#group'       => 'meso_settings',
+  	);
   
     $form['mesowest_settings']['noaa_weather_mesowest_station'] = array(
     '#type'          => 'textfield',
     '#title'         => t('MESOWEST station to pull current conditions from'),
     '#description'   => t('Please enter the Station ID.'),
     '#default_value' => variable_get('noaa_weather_mesowest_station',NULL),
+    '#suffix'  => '<p>Leave blank to clear currently stored MesoWest data.</p>',
     '#required'      => FALSE,
-    '#group'         => 'main_settings',
+    '#group'         => 'meso_settings',
   );
   
   //Update NOAA Weather, this should flag an error when we first start the module.
   $attributes['class'] = 'update-noaa-weather';
   $attributes['query'] = drupal_get_destination();
-  $items[] = l('Update MESOWEST', 'noaaweather/update/mesowest', $attributes);
+  $items_meso[] = l('Update MESOWEST', 'noaaweather/update/mesowest', $attributes);
   $form['mesowest_settings']['updatemwlink'] = array(
     '#prefix' => '<p>',
-    '#value'   => theme('item_list', $items),
+    '#value'   => theme('item_list', $items_meso),
     '#suffix'  => '</p>',
-    '#group'   => 'main_settings',
+    '#group'   => 'meso_settings',
   );
+  
+  $mesowest = variable_get('noaa_weather_current_mesowest',NULL);
+  if($mesowest){
+	  $cur_meso = '';
+	  foreach ($mesowest as $key => $value) {
+	  	$cur_meso .= $key.' : <b>'.$value.'</b><br />';
+	  }
+	  $form['mesowest_settings']['currentmeso'] = array(
+	    '#prefix' => '<p><b>Currently Stored MesoWest Data</b><br />',
+	    '#value'   => $cur_meso,
+	    '#suffix'  => '</p>',
+	    '#group'   => 'meso_settings',
+	  );
+  }
+  
+
+  $form['#submit'][] = '_noaa_weather_current_settings_submit';
   
   //Enable vertical tabs if installed.
   $form['#pre_render'][] = 'vertical_tabs_form_pre_render';
+  
+  
+  
   return system_settings_form( $form );
 }
 
 //Submit Current Settings Form
 function _noaa_weather_current_settings_submit($form_id, &$form_state) {
-  $update_message = t('Your NOAA Weather current condition settings have been saved.');
+	$update_message = t('Your NOAA Weather current condition settings have been saved.');
+	if($form_state['values']['noaa_weather_mesowest_station'] == ''){
+		$mesowest = variable_get('noaa_weather_current_mesowest',NULL);
+		if($mesowest){
+		variable_del('noaa_weather_current_mesowest');
+		$update_message .= '<br />'.t('MesoWest Data has been deleted');
+		}
+	}
+	
+ 
   drupal_set_message($update_message);
 }
 
@@ -265,6 +362,7 @@ function _noaa_weather_forecast_settings() {
     '#group'   => 'main',
   );
   //Enable vertical tabs if installed.
+
   $form['#pre_render'][] = 'vertical_tabs_form_pre_render';
   return system_settings_form( $form );
 }

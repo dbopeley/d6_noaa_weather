@@ -143,7 +143,9 @@ function noaa_weather_uninstall() {
   variable_del('noaa_weather_icons_list');
   variable_del('noaa_weather_icons_custom_directories');
   variable_del('noaa_weather_mesowest_station_default');
-
+  variable_del('noaa_weather_mesowest_station');
+  variable_del('noaa_weather_front_display');
+  variable_del('noaa_weather_detail_link');
   //Clear all caches upon uninstall.
   cache_clear_all('*', 'cache', TRUE);
   cache_clear_all('*', 'cache_filter', TRUE);

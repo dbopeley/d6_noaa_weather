@@ -48,11 +48,17 @@ function _noaa_weather_get_radar_overlays($radar_station) {
  * Get The Current radar for a radar station
  */
 function _noaa_weather_get_radar($radar_station) {
+	
   $radar_station      = strtoupper($radar_station);
   $destination_path   = file_directory_path().'/noaa_weather_radar/'.$radar_station;
   //Current radar image.
-  $remote_radar_url   = 'http://radar.weather.gov/ridge/RadarImg/N0R/'.$radar_station.'_N0R_0.gif';
+  //$remote_radar_url   = 'http://radar.weather.gov/ridge/RadarImg/N0R/'.$radar_station.'_N0R_0.gif';
+  
+  $remote_radar_url = 'http://radar.weather.gov/RadarImg/N0R/'.$radar_station.'_N0R_0.gif';
+  
   $destination_radar  = $destination_path.'/current_radar.gif';
+  
+  
   $ch       = curl_init();
   curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 ); //Set curl to return the data instead of printing it to the browser.
   curl_setopt( $ch, CURLOPT_URL, $remote_radar_url ); //Set the URL for the image
@@ -60,8 +66,21 @@ function _noaa_weather_get_radar($radar_station) {
   curl_close( $ch );
   //Save It to the local server
   $filepath = file_save_data( $data, $destination_radar, FILE_EXISTS_REPLACE ); //Replace the file
+  
+  if($filepath){
+  	
+  	 //Log to watchdog.
+    watchdog('noaa_weather', t('NOAA Weather: Radar Picture loaded successfully!'),array(), WATCHDOG_NOTICE, NULL);
+  }else{
+  	watchdog('noaa_weather', t('NOAA Weather: Radar Picture failed to load!'),array(), WATCHDOG_NOTICE, NULL);
+  }
+  
+  
   //Current radar legend.
-  $remote_legend_url  = 'http://radar.weather.gov/ridge/Legend/N0R/'.$radar_station.'_N0R_Legend_0.gif';
+  //$remote_legend_url  = 'http://radar.weather.gov/ridge/Legend/N0R/'.$radar_station.'_N0R_Legend_0.gif';
+  
+   $remote_legend_url  = 'http://radar.weather.gov/Legend/N0R/'.$radar_station.'_N0R_Legend_0.gif';
+  
   $destination_legend = $destination_path.'/current_legend.gif';
   $ch       = curl_init();
   curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 ); //Set curl to return the data instead of printing it to the browser.
@@ -69,7 +88,12 @@ function _noaa_weather_get_radar($radar_station) {
   $data     = curl_exec( $ch );
   curl_close( $ch );
   //Save It to the local server
-  $filepath = file_save_data( $data, $destination_legend, FILE_EXISTS_REPLACE ); //Replace the file
+  $legendpath = file_save_data( $data, $destination_legend, FILE_EXISTS_REPLACE ); //Replace the file
+  if($legendpath){
+  	  watchdog('noaa_weather', t('NOAA Weather: Radar Legend loaded successfully!'),array(), WATCHDOG_NOTICE, NULL);
+  }else{
+  	watchdog('noaa_weather', t('NOAA Weather: Radar Legend failed to load!'),array(), WATCHDOG_NOTICE, NULL);
+  }
   return true;
 }
 
@@ -149,7 +173,7 @@ function _noaa_weather_get_current_conditions($current_station) {
     
  
     //Log to watchdog.
-    watchdog('noaa_weather', t('Custom Weather Current Weather loaded successfully!'),array(), WATCHDOG_NOTICE, NULL);
+    watchdog('noaa_weather', t('NOAA Weather: Current Weather loaded successfully!'),array(), WATCHDOG_NOTICE, NULL);
     
     //kpr($current_condtions);
     //Set the Current Conditions variable
@@ -233,7 +257,7 @@ function _noaa_weather_get_current_mesowest($mesowest_station) {
       }
     }
     //Log to watchdog.
-    watchdog('noaa_weather', t('Custom Weather Current Weather loaded successfully!'),array(), WATCHDOG_NOTICE, NULL);
+    watchdog('noaa_weather', t('NOAA Weather: MesoWest loaded successfully!'),array(), WATCHDOG_NOTICE, NULL);
     
     
     variable_set('noaa_weather_current_mesowest',$current_mesowest);
@@ -252,6 +276,8 @@ function _noaa_weather_get_forecast($lat, $lon, $days) {
 				);
 	$response = drupal_http_request($url, $headers, $method = 'GET', $data = NULL, $retry = 0);
 	
+	
+
 	
 	$responsexml = preg_replace('/&/msU', '&amp;', $response->data);
 	$responsexml = preg_replace('/[^(\x20-\x7F)]*/','', $responsexml);
@@ -354,7 +380,7 @@ function _noaa_weather_get_forecast($lat, $lon, $days) {
       $ci++;
     }
     //Log to watchdog.
-    watchdog('noaa_weather', t('Custom Weather Future Forecast loaded successfully!'), array(), WATCHDOG_NOTICE, NULL);
+    watchdog('noaa_weather', t('NOAA Weather: Forecast loaded successfully!'), array(), WATCHDOG_NOTICE, NULL);
     //Set the Current Conditions variable
     variable_set('noaa_weather_forecast',$extended);
   }
