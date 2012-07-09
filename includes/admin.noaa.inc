@@ -138,6 +138,16 @@ function _noaa_weather_current_settings() {
     '#required'      => TRUE,
     '#group'         => 'main_settings',
   );
+  
+  $form['current_settings']['noaa_weather_current_basepath'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Current Conditions Basepath'),
+    '#description'   => t('Base path for current conditions feed.'),
+    '#default_value' => variable_get('noaa_weather_current_basepath', NOAA_WEATHER_CURRENT_URL),
+    '#required'      => TRUE,
+    '#group'         => 'main_settings',
+  );
+  
   //Temperature unit.
   $temp_name = array(
     'f' => t('Farenheit'),

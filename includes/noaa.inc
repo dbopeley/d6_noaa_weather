@@ -111,20 +111,20 @@ function _noaa_weather_get_current_conditions($current_station) {
 
   //Load current conditions via xml
 	$current_condtions = array();  
-	$url = 'http://www.weather.gov/xml/current_obs/'. $current_station .'.xml';
+
+	$basepath = variable_get('noaa_weather_current_basepath', NOAA_WEATHER_CURRENT_URL);
+	$url = $basepath. $current_station .'.xml';
+	
+	
 	$headers = array(
 				'Content-Type' => 'text/xml',
 				'Accept-Charset' => 'utf-8'
 				);
 	$response = drupal_http_request($url, $headers, $method = 'GET', $data = NULL, $retry = 0);
 	
-	
-	
 	$responsexml = preg_replace('/&/msU', '&amp;', $response->data);
 	$responsexml = preg_replace('/[^(\x20-\x7F)]*/','', $responsexml);
 	$xml = @simplexml_load_string($responsexml);
-
-	
 
   //If we have a valid object, get current conditions
   if (!is_object($xml)) {
